@@ -1,3 +1,4 @@
+import os
 def readDatabase(root):
     """
     Purpose: This function reads all the
@@ -6,16 +7,12 @@ def readDatabase(root):
     """
     file = open(root, 'r')
     tests = []
-    FIRSTTIME = False
     for line in file:
-        if "first-time" in line:
-              FIRSTTIME = True
-        else:
-            line = line.strip().split(',')
-            tests.append(line)
+        line = line.strip().split(',')
+        tests.append(line)
 
     file.close()
-    return tests, FIRSTTIME
+    return tests
 
 def updateDatabase(root, tests):
     file = open(root, 'w')
@@ -33,11 +30,14 @@ def displayWelcome(FIRSTTIME, tests):
 
 if __name__ == "__main__":
     APPISACTIVE = True
-    database = "database.txt"
-    tests, FIRSTTIME = readDatabase(database)
-    displayWelcome(FIRSTTIME, tests)
-    if FIRSTTIME:
-        updateDatabase(database, tests)
-        FIRSTTIME = False
+    FIRSTTIME = False
 
-    CHANGEISMADE = False
+    database_root = "database.txt"
+    if os.path.exists(database_root) == False:
+        file = open(database_root, 'w')
+        file.close()
+        FIRSTTIME = True
+
+    tests = readDatabase(database_root)
+
+    displayWelcome(FIRSTTIME, tests)
