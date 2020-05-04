@@ -53,7 +53,15 @@ def rankTests(tests):
     Returns: Returns a sorted list of tests where each sublist contains the test name (string), test date (datetime.datetime)
                 and the topic of the test (string).
     """
-    pass
+    for i in range(len(tests)):
+        indexOfEarliest = i
+        for j in range(i+1, len(tests)):
+            if tests[j][1] < tests[indexOfEarliest][1]:              # finding the test with the earliest test date
+                indexOfEarliest = j
+
+        tests[i], tests[indexOfEarliest] = test[indexOfEarliest], tests[i] # swap
+
+    return tests
 
 
 def displayWelcome(FIRSTTIME, tests):
@@ -66,14 +74,7 @@ def displayWelcome(FIRSTTIME, tests):
         print("Welcome to the Study App.")
         print("This app will help you study for any test.")
         print("This app compiles all the resources online and displays them to you in an organized way.")
-        print("You are currently on the home page")
 
-def getInteger(prompt, high, low):
-    """
-    Purpose:
-    Parameters:
-    Returns:
-    """
 
 if __name__ == "__main__":
     APPISACTIVE = True
@@ -93,6 +94,12 @@ if __name__ == "__main__":
 
     displayWelcome(FIRSTTIME, tests)
 
-    pages = {1:"home", 2:"study", 3:"general"}
+    currentPage = -1
+    pages = {0:"home", 1:"study", 2:"general"}
     while APPISACTIVE:
-        
+        page = input("Type for page:")
+        currentPage = page
+
+        if currentPage == "home":
+            print("This is the home page")
+            print("These are your tests (ranked in urgency)")

@@ -22,7 +22,6 @@
     <list default="true" id="88f21441-3947-4b3e-9520-76bd1bee46bf" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database.txt" beforeDir="false" afterPath="$PROJECT_DIR$/database.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,12 +38,14 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-12" />
-    <option name="width" value="981" />
-    <option name="height" value="1092" />
+  <component name="ProjectId" id="1bS0z86HCGFtZwVsaqy58yHosUd" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
@@ -97,21 +98,25 @@
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
     <state x="663" y="168" key="#app/0.0.1920.1080@0.0.1920.1080" timestamp="1588311520879" />
-    <state width="1882" height="291" key="GridCell.Tab.0.bottom" timestamp="1588315912017">
+    <state width="1882" height="291" key="GridCell.Tab.0.bottom" timestamp="1588371201349">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1882" height="291" key="GridCell.Tab.0.bottom/0.0.1920.1080@0.0.1920.1080" timestamp="1588315912017" />
-    <state width="1882" height="291" key="GridCell.Tab.0.center" timestamp="1588315912017">
+    <state width="1882" height="291" key="GridCell.Tab.0.bottom/0.0.1920.1080@0.0.1920.1080" timestamp="1588371201349" />
+    <state width="1882" height="291" key="GridCell.Tab.0.center" timestamp="1588371201349">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1882" height="291" key="GridCell.Tab.0.center/0.0.1920.1080@0.0.1920.1080" timestamp="1588315912017" />
-    <state width="1882" height="291" key="GridCell.Tab.0.left" timestamp="1588315912017">
+    <state width="1882" height="291" key="GridCell.Tab.0.center/0.0.1920.1080@0.0.1920.1080" timestamp="1588371201349" />
+    <state width="1882" height="291" key="GridCell.Tab.0.left" timestamp="1588371201349">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1882" height="291" key="GridCell.Tab.0.left/0.0.1920.1080@0.0.1920.1080" timestamp="1588315912017" />
-    <state width="1882" height="291" key="GridCell.Tab.0.right" timestamp="1588315912017">
+    <state width="1882" height="291" key="GridCell.Tab.0.left/0.0.1920.1080@0.0.1920.1080" timestamp="1588371201349" />
+    <state width="1882" height="291" key="GridCell.Tab.0.right" timestamp="1588371201349">
       <screen x="0" y="0" width="1920" height="1080" />
     </state>
-    <state width="1882" height="291" key="GridCell.Tab.0.right/0.0.1920.1080@0.0.1920.1080" timestamp="1588315912017" />
+    <state width="1882" height="291" key="GridCell.Tab.0.right/0.0.1920.1080@0.0.1920.1080" timestamp="1588371201349" />
+    <state x="623" y="235" width="672" height="678" key="search.everywhere.popup" timestamp="1588611755991">
+      <screen x="0" y="0" width="1920" height="1080" />
+    </state>
+    <state x="623" y="235" width="672" height="678" key="search.everywhere.popup/0.0.1920.1080@0.0.1920.1080" timestamp="1588611755991" />
   </component>
 </project>
