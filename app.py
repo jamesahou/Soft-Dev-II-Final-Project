@@ -59,7 +59,7 @@ def rankTests(tests):
             if tests[j][1] < tests[indexOfEarliest][1]:              # finding the test with the earliest test date
                 indexOfEarliest = j
 
-        tests[i], tests[indexOfEarliest] = test[indexOfEarliest], tests[i] # swap
+        tests[i], tests[indexOfEarliest] = tests[indexOfEarliest], tests[i] # swap
 
     return tests
 
@@ -90,12 +90,14 @@ if __name__ == "__main__":
 
     tests = readDatabase(database_root)
     tests = rankTests(tests)
+    print(tests)
     updateDatabase(database_root, tests)
 
     displayWelcome(FIRSTTIME, tests)
 
     currentPage = -1
     pages = {0:"home", 1:"study", 2:"general"}
+
     while APPISACTIVE:
         page = input("Type for page:")
         currentPage = page
@@ -103,3 +105,6 @@ if __name__ == "__main__":
         if currentPage == "home":
             print("This is the home page")
             print("These are your tests (ranked in urgency)")
+
+        elif currentPage == "study":
+            for i in range:
