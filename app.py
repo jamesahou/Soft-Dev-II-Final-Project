@@ -75,6 +75,9 @@ def displayWelcome(FIRSTTIME, tests):
         print("This app will help you study for any test.")
         print("This app compiles all the resources online and displays them to you in an organized way.")
 
+def displayTests(tests):
+    for i in range(len(tests)):
+        print(i + 1 + " " + tests[i])
 
 if __name__ == "__main__":
     APPISACTIVE = True
@@ -105,6 +108,19 @@ if __name__ == "__main__":
         if currentPage == "home":
             print("This is the home page")
             print("These are your tests (ranked in urgency)")
+            displayTests(tests)
+            while currentPage == "home":
+
 
         elif currentPage == "study":
-            for i in range:
+            while currentPage == "study":
+                displayTests(tests)
+                choice = input("Enter home to go to home, general to go to general, or the number of the test you want to study for: ")
+
+                if choice == "home":
+                    currentPage = choice
+                elif choice == "general":
+                    currentPage = "general"
+                else:
+                    choice = int(choice)
+                    
