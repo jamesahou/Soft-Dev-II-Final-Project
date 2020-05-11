@@ -7,6 +7,7 @@
                  the general page, the app displays statistics of the user.
     Author: James Hou
     Date: 5/1/2020
+    YouTube API KEY: AIzaSyD3NnX0FvBqCcqbMNRlo6w-mUphP4UWCII
 """
 import os
 from datetime import datetime
@@ -44,6 +45,11 @@ def updateDatabase(root, tests):
         file.write("\n")
 
     file.close()
+def threadedChecker(tests):
+    while True:
+        for i in range(tests):
+            if datetime.now() > tests[i][1]:
+                pass #TODO Finish
 
 def rankTests(tests):
     """
@@ -77,7 +83,7 @@ def displayWelcome(FIRSTTIME, tests):
 
 def displayTests(tests):
     for i in range(len(tests)):
-        print(i + 1 + " " + tests[i])
+        print(str(i + 1) + " " + str(tests[i]))
 
 if __name__ == "__main__":
     APPISACTIVE = True
@@ -102,7 +108,7 @@ if __name__ == "__main__":
     pages = {0:"home", 1:"study", 2:"general"}
 
     while APPISACTIVE:
-        page = input("Type for page:")
+        page = input("Type for page: ")
         currentPage = page
 
         if currentPage == "home":
@@ -110,17 +116,45 @@ if __name__ == "__main__":
             print("These are your tests (ranked in urgency)")
             displayTests(tests)
             while currentPage == "home":
+                choice = input("study, general, quit, add ")
+                if choice == "quit":
+                    currentPage = "quit"
+
+                elif choice == "add":
+                    test = []
+                    test.append(input("Name of test: "))
+                    date = ""
+                    date += input("Name of month: ")[:3] + " "
+                    date += input("Date: ") + " "
+                    date += input("Year: ") + " "
+                    date += input("Hour: ") + ":"
+                    date += input("Minute: ")
+                    date += input("AM/PM: ")
+                    date = datetime.strptime(date, '%b %d %Y %I:%M%p')
+                    test.append(date)
+                    test.append(input("Description of test "))
+
+                    tests.append(test)
+                    rankTests(tests)
+                    updateDatabase(database_root, tests)
+                    displayTests(tests)
+                else:
+                    currentPage = choice
 
 
         elif currentPage == "study":
             while currentPage == "study":
                 displayTests(tests)
-                choice = input("Enter home to go to home, general to go to general, or the number of the test you want to study for: ")
+                choice = input("Enter home to go to home, exit to exit, general to go to general, or the number of the test you want to study for: ")
 
                 if choice == "home":
                     currentPage = choice
                 elif choice == "general":
                     currentPage = "general"
+                elif choice == "quit":
+                    APPISACTIVE = False
+                    currentPage = "quit"
                 else:
                     choice = int(choice) - 1
-                    topic = tests[choice][-1]
+                    chosenTest = tests[choice]
+                    print("You chose to study for %s" % chosenTest[0])
