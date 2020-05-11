@@ -122,5 +122,5 @@ if __name__ == "__main__":
                 elif choice == "general":
                     currentPage = "general"
                 else:
-                    choice = int(choice)
-                    
+                    choice = int(choice) - 1
+                    topic = tests[choice][-1]
