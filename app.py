@@ -89,34 +89,34 @@ if __name__ == "__main__":
     APPISACTIVE = True
     FIRSTTIME = False
 
-    database_root = "database.txt"
+    database_path = "database.txt"
+    settings_path = "settings.txt"
+
+    ytkey = "AIzaSyD3NnX0FvBqCcqbMNRlo6w-mUphP4UWCII"
     # Checks if the user is a first-time user by looking for the database file.
     # If the user is, it creates a new database file and changes the first time user flag.
-    if os.path.exists(database_root) == False:
-        file = open(database_root, 'w')
+    if os.path.exists(database_path) == False:
+        file = open(database_path, 'w')
         file.close()
         FIRSTTIME = True
-
-    tests = readDatabase(database_root)
+    tests = readDatabase(database_path)
     tests = rankTests(tests)
     print(tests)
-    updateDatabase(database_root, tests)
+    updateDatabase(database_path, tests)
 
     displayWelcome(FIRSTTIME, tests)
 
     currentPage = -1
     pages = {0:"home", 1:"study", 2:"general"}
-
+    page = input("Type for page: ")
+    currentPage = page
     while APPISACTIVE:
-        page = input("Type for page: ")
-        currentPage = page
-
         if currentPage == "home":
             print("This is the home page")
             print("These are your tests (ranked in urgency)")
             displayTests(tests)
             while currentPage == "home":
-                choice = input("study, general, quit, add ")
+                choice = input("study, quit, add ")
                 if choice == "quit":
                     currentPage = "quit"
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
                     tests.append(test)
                     rankTests(tests)
-                    updateDatabase(database_root, tests)
+                    updateDatabase(database_path, tests)
                     displayTests(tests)
                 else:
                     currentPage = choice
@@ -145,12 +145,10 @@ if __name__ == "__main__":
         elif currentPage == "study":
             while currentPage == "study":
                 displayTests(tests)
-                choice = input("Enter home to go to home, exit to exit, general to go to general, or the number of the test you want to study for: ")
+                choice = input("Enter home to go to home, exit to exit, or the number of the test you want to study for: ")
 
                 if choice == "home":
                     currentPage = choice
-                elif choice == "general":
-                    currentPage = "general"
                 elif choice == "quit":
                     APPISACTIVE = False
                     currentPage = "quit"
@@ -158,3 +156,4 @@ if __name__ == "__main__":
                     choice = int(choice) - 1
                     chosenTest = tests[choice]
                     print("You chose to study for %s" % chosenTest[0])
+
