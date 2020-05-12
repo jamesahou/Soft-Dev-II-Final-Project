@@ -11,6 +11,8 @@
 """
 import os
 from datetime import datetime
+import threading
+import time
 
 def readDatabase(root):
     """
@@ -29,6 +31,7 @@ def readDatabase(root):
     file.close()
     return tests
 
+
 def updateDatabase(root, tests):
     """
     Purpose: This function updates the database file with the new set of tests.
@@ -45,11 +48,17 @@ def updateDatabase(root, tests):
         file.write("\n")
 
     file.close()
+
+
 def threadedChecker(tests):
     while True:
         for i in range(tests):
             if datetime.now() > tests[i][1]:
-                pass #TODO Finish
+                tests.pop(i)
+                updateDatabase("database.txt", tests)
+
+        time.sleep(600)
+
 
 def rankTests(tests):
     """
@@ -85,6 +94,7 @@ def displayTests(tests):
     for i in range(len(tests)):
         print(str(i + 1) + " " + str(tests[i]))
 
+
 if __name__ == "__main__":
     APPISACTIVE = True
     FIRSTTIME = False
@@ -101,8 +111,9 @@ if __name__ == "__main__":
         FIRSTTIME = True
     tests = readDatabase(database_path)
     tests = rankTests(tests)
-    print(tests)
+
     updateDatabase(database_path, tests)
+
 
     displayWelcome(FIRSTTIME, tests)
 
@@ -111,6 +122,7 @@ if __name__ == "__main__":
     page = input("Type for page: ")
     currentPage = page
     while APPISACTIVE:
+
         if currentPage == "home":
             print("This is the home page")
             print("These are your tests (ranked in urgency)")
@@ -141,7 +153,6 @@ if __name__ == "__main__":
                 else:
                     currentPage = choice
 
-
         elif currentPage == "study":
             while currentPage == "study":
                 displayTests(tests)
@@ -156,4 +167,3 @@ if __name__ == "__main__":
                     choice = int(choice) - 1
                     chosenTest = tests[choice]
                     print("You chose to study for %s" % chosenTest[0])
-
