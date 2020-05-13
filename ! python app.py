@@ -103,28 +103,14 @@ def getVideos(videoTopic):
     api_key = "AIzaSyD3NnX0FvBqCcqbMNRlo6w-mUphP4UWCII"
     query = videoTopic
     num_results = 10
-    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q={query}&sortBy=views&maxResults={num_results}&key={api_key}"
+    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&sortBy=views&maxResults={num_results}&key={api_key}"
     data = requests.get(url)
-    data = data.json()
-    videoId = []
-    videoThumbnailUrls = []
-    videoDescriptions = []
-    videoTitles = []
-    for video in data["items"]:
-        videoId.append(video["id"]["videoId"])
-        videoThumbnailUrls.append(video["snippet"]["thumbnails"]["default"])
-        videoTitles.append(video["snippet"]["title"])
-        videoDescriptions.append(video["snippet"]["description"])
-        
-    print(videoId)
-    print(videoThumbnailUrls)
-    print(videoDescriptions)
-    print(videoTitles)
-    
-    return videoId, videoThumbnailUrls, videoDescriptions, videoTitles
+    data = data.loads()
+    print(data.content)
 
 
-getVideos("linear algebra")
+
+getVideos("surfing")
 """
 if __name__ == "__main__":
     APPISACTIVE = True
