@@ -15,9 +15,12 @@ import threading
 import time
 import json
 import re
-import urllib.request
-from pytube import YouTube
+import graphics
 import requests
+import tkinter as tk
+from PIL import ImageTk, Image
+import requests
+from io import BytesIO
 
 def readDatabase(root):
     """
@@ -112,19 +115,28 @@ def getVideos(videoTopic):
     videoTitles = []
     for video in data["items"]:
         videoId.append(video["id"]["videoId"])
-        videoThumbnailUrls.append(video["snippet"]["thumbnails"]["default"])
+        videoThumbnailUrls.append(video["snippet"]["thumbnails"]["default"]['url'])
         videoTitles.append(video["snippet"]["title"])
         videoDescriptions.append(video["snippet"]["description"])
-        
-    print(videoId)
-    print(videoThumbnailUrls)
-    print(videoDescriptions)
-    print(videoTitles)
     
     return videoId, videoThumbnailUrls, videoDescriptions, videoTitles
 
+def test():
+    win = graphics.GraphWin()
+    videoId, videoThumbnailUrls, videoDescriptions, videoTitles = getVideos("pikachu")
+    img_url = videoThumbnailUrls[0]
 
-getVideos("linear algebra")
+    response = requests.get(img_url)
+    img_data = response.content
+    photo_image = ImageTk.PhotoImage(Image.open(BytesIO(img_data)))
+
+    win.toScreen(100, 100)
+    win.create_image(100, 100, image=photo_image)
+
+    win.getMouse()
+
+test()
+
 """
 if __name__ == "__main__":
     APPISACTIVE = True
