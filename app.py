@@ -7,7 +7,6 @@
                  the general page, the app displays statistics of the user.
     Author: James Hou
     Date: 5/1/2020
-    YouTube API KEY: AIzaSyD3NnX0FvBqCcqbMNRlo6w-mUphP4UWCII
 """
 import os
 from datetime import datetime
@@ -102,8 +101,15 @@ def displayTests(tests):
     for i in range(len(tests)):
         print(str(i + 1) + " " + str(tests[i]))
 
+def readAPIKey(api):
+    file = open("../api_key.txt", 'r')
+    for line in file:
+        if api in line:
+            return line.strip().split(',')[1]
+
+
 def getVideos(videoTopic):
-    api_key = "AIzaSyD3NnX0FvBqCcqbMNRlo6w-mUphP4UWCII"
+    api_key = readAPIKey("yt")
     query = videoTopic
     num_results = 10
     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q={query}&sortBy=views&maxResults={num_results}&key={api_key}"
@@ -135,7 +141,6 @@ def test():
 
     win.getMouse()
 
-test()
 
 """
 if __name__ == "__main__":
