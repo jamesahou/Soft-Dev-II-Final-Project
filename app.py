@@ -166,6 +166,9 @@ if __name__ == "__main__":
     database_path = "database.txt"
     settings_path = "settings.txt"
 
+
+    # Checks if the user is a first-time user by looking for the database file.
+    # If the user is, it creates a new database file and changes the first time user flag.
     if os.path.exists(database_path) == False:
         file = open(database_path, 'w')
         file.close()
