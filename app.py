@@ -97,14 +97,17 @@ def displayWelcome(FIRSTTIME, tests):
         print("This app will help you study for any test.")
         print("This app compiles all the resources online and displays them to you in an organized way.")
 
+
 def displayTests(tests):
     for i in range(len(tests)):
         print(str(i + 1) + " " + str(tests[i]))
+
 
 def readAPIKey(api):
     file = open("../api_key.txt", 'r')
     for line in file:
         if api in line:
+            file.close()
             return line.strip().split(',')[1]
 
 
@@ -127,22 +130,35 @@ def getVideos(videoTopic):
     
     return videoId, videoThumbnailUrls, videoDescriptions, videoTitles
 
-def test():
-    win = graphics.GraphWin()
-    videoId, videoThumbnailUrls, videoDescriptions, videoTitles = getVideos("pikachu")
-    img_url = videoThumbnailUrls[0]
-
-    response = requests.get(img_url)
+def displayImage(thumbnailUrl, win, center, imageWidth, imageHeight):
+    response = requests.get(thumbnailUrl)
     img_data = response.content
-    photo_image = ImageTk.PhotoImage(Image.open(BytesIO(img_data)))
+    photo_image = ImageTk.PhotoImage(Image.open(BytesIO(img_data)).resize((imageWidth, imageHeight), Image.ANTIALIAS))
 
-    win.toScreen(100, 100)
-    win.create_image(100, 100, image=photo_image)
+    win.toScreen(center.getX(), center.getY())
+    win.create_image(center.getX(), center.getY(), image=photo_image)
+    mouse = win.getMouse()
+    return win, mouse
 
-    win.getMouse()
+def showFrame(frames, controller):
+    frame = frames[controller]
+    frame.tkraise()
+    return
+
+def createHomePage(frames, container):
+    frame = tk.Frame(container)
+    homeButton = tk.Button()
+    frames["HomePage"] = frame
+    return
 
 
-"""
+def createContainer(app):
+    container = tk.Frame(app)
+    container.pack(side="top", fill="both", expand=True)
+    container.grid_rowconfigure(0, weight=1)
+    container.grid_columnconfigure(0, weight=1)
+    return container
+
 if __name__ == "__main__":
     APPISACTIVE = True
     FIRSTTIME = False
@@ -150,9 +166,6 @@ if __name__ == "__main__":
     database_path = "database.txt"
     settings_path = "settings.txt"
 
-    yt_key = "AIzaSyD3NnX0FvBqCcqbMNRlo6w-mUphP4UWCII"
-    # Checks if the user is a first-time user by looking for the database file.
-    # If the user is, it creates a new database file and changes the first time user flag.
     if os.path.exists(database_path) == False:
         file = open(database_path, 'w')
         file.close()
@@ -162,7 +175,25 @@ if __name__ == "__main__":
 
     updateDatabase(database_path, tests)
 
+    app = tk.Tk()
+    app.title("Study App")
+    appHeight = app.winfo_screenheight() * 4 // 5
+    appWidth = app.winfo_screenwidth() * 4 // 5
+    app.geometry("%dx%d" %(appWidth, appHeight))
 
+    container = createContainer(app)
+    frames = {}
+    createHomePage(frames, container)
+    for (key, value) in frames.items():
+        page = key
+        frame = value
+        frames[page] = frame
+        # 'nsew' tells each Frame widget to fill the entire space allotted
+        frame.grid(row=0, column=0, sticky="nsew")
+
+    showFrame(frames, "HomePage")
+    app.mainloop()
+"""
     displayWelcome(FIRSTTIME, tests)
 
     currentPage = -1
