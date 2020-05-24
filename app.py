@@ -101,26 +101,33 @@ class Test:
         self.description = description
 
     def summarize(self):
-        print("Test name: %s Test date: %s Test Description: %s" %(self.name, self.date_string, self.description))
+        summary = "Test name: %s Test date: %s Test Description: %s" %(self.name, self.date_string, self.description)
+        print(summary)
+        return summary
 
 
 class TestCatalog:
-    def __init__(self):
+    def __init__(self, doThread=True, root="database.txt"):
+        self.root = root
         self.tests = self.readDatabase()
         self.length = len(self.tests)
-        thread = threading.Thread(target=self.threadedChecker)
-        thread.daemon = True
-        thread.start()
+        self.rankTests()
+        self.updateDatabase()
+
+        if doThread:
+            thread = threading.Thread(target=self.threadedChecker)
+            thread.daemon = True
+            thread.start()
 
 
-    def readDatabase(self, root="database.txt"):
+    def readDatabase(self,):
         """
         Purpose: This function reads all the upcoming tests of the user.
         Parameters: This function takes the path of the database file as a string.
         Returns: Returns a list of lists with each list containing the test name (string), test date (datetime.datetime)
                  and topic (string).
         """
-        file = open(root, 'r')
+        file = open(self.root, 'r')
         tests = []
         for line in file:
             line = line.strip().split(',')
@@ -130,13 +137,13 @@ class TestCatalog:
         file.close()
         return tests
 
-    def updateDatabase(self, root="database.txt"):
+    def updateDatabase(self):
         """
         Purpose: This function updates the database file with the new set of tests.
         Parameters: This function takes the path to the databse file, a string, and the list of tests which is a list of lists.
         Returns: N/A
         """
-        file = open(root, 'w')
+        file = open(self.root, 'w')
         for test in self.tests:
             file.write(test.name)
             file.write(',')
@@ -158,12 +165,12 @@ class TestCatalog:
         for i in range(self.length):
             indexOfEarliest = i
             for j in range(i + 1, self.length):
-                if tests[j].date < tests[indexOfEarliest].date:  # finding the test with the earliest test date
+                if self.tests[j].date < self.tests[indexOfEarliest].date:  # finding the test with the earliest test date
                     indexOfEarliest = j
 
-            tests[i], tests[indexOfEarliest] = tests[indexOfEarliest], tests[i]  # swap
+            self.tests[i], self.tests[indexOfEarliest] = self.tests[indexOfEarliest], self.tests[i]  # swap
 
-        return tests
+        return self.tests
 
     def summarizeTests(self):
         for test in self.tests:
@@ -180,6 +187,11 @@ class TestCatalog:
             self.updateDatabase()
             self.summarizeTests()
             time.sleep(600)
+
+    def addTest(self, test):
+        self.tests.append(test)
+        self.updateDatabase()
+        return self.tests
 
 def showFrame(frames, controller):
     frame = frames[controller]

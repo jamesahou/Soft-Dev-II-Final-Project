@@ -1,0 +1,22 @@
+1. Open up the app using the command python app.py
+2. Follow go to the Settings page and insert enter your email
+Windows: 
+   3.Edit the run_emailer.bat file
+    - "C:\Users\James\AppData\Local\Programs\Python\Python38\python.exe" to where your python 
+     executable file is; likely "C:\Users\MYUSER\AppData\Local\Programs\Python\Python38\python.exe"
+    - "C:\Users\James\soft-dev-ii\Soft-Dev-II-Final-Project\emailer.py" to where this project is
+    4. Go to Control Panel and Search for Administrative Tools
+    5. Find Task Scheduler and launch it
+    6. Create Basic Task
+    7. Name it whatever you want
+    8. Choose daily
+    9. Set the time to whenever you want to be reminded
+    10. Select Start a program
+    11. Click next and insert where the bat file is
+    12. Click Finish
+
+Mac:
+   Follow this https://ole.michelsen.dk/blog/schedule-jobs-with-crontab-on-mac-osx.html
+   sorry
+
+   
