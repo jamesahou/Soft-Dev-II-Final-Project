@@ -10,135 +10,176 @@
 """
 import os
 from datetime import datetime
-import threading
 import time
 import json
-import re
 import graphics
 import requests
 import tkinter as tk
+import threading
 from PIL import ImageTk, Image
 import requests
 from io import BytesIO
 
-def readDatabase(root):
-    """
-    Purpose: This function reads all the upcoming tests of the user.
-    Parameters: This function takes the path of the database file as a string.
-    Returns: Returns a list of lists with each list containing the test name (string), test date (datetime.datetime)
-             and topic (string).
-    """
-    file = open(root, 'r')
-    tests = []
-    for line in file:
-        line = line.strip().split(',')
-        line[1] = datetime.strptime(line[1], '%b %d %Y %I:%M%p')        # cast the string into a datetime value
-        tests.append(line)
 
-    file.close()
-    return tests
+class API:
+    def __init__(self, api_name):
+        self.api_name = api_name
+        self.api_key = self.readAPIKey()
+
+    def readAPIKey(self):
+        file = open("../api_key.txt", 'r')
+        for line in file:
+            if self.api_name in line:
+                file.close()
+                self.api_key = line.strip().split(',')[1]
+                return self.api_key
 
 
-def updateDatabase(root, tests):
-    """
-    Purpose: This function updates the database file with the new set of tests.
-    Parameters: This function takes the path to the databse file, a string, and the list of tests which is a list of lists.
-    Returns: N/A
-    """
-    file = open(root, 'w')
-    for i in range(len(tests)):
-        file.write(tests[i][0])
-        file.write(',')
-        file.write(tests[i][1].strftime("%b %d %Y %I:%M%p"))        # formats the datetime into a string.
-        file.write(',')
-        file.write(tests[i][2])
-        file.write("\n")
+class YouTubeAPI(API):
+    def __init__(self):
+        super().__init__('yt')
+        self.search_url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&sortBy=views&key=%s' % self.api_key
 
-    file.close()
+    def searchVideo(self, query, numResults):
+        search_url = self.search_url + ("&q=%s" % query) + ("&maxResults=%d" % numResults)
+        data = requests.get(search_url)
+        data = data.json()
+        videos = []
+        for video in data["items"]:
+            videos.append(Video(video))
+        return videos
 
 
-def threadedChecker(tests):
-    while True:
-        for i in range(tests):
-            if datetime.now() > tests[i][1]:
-                tests.pop(i)
-                updateDatabase("database.txt", tests)
+class Video:
+    def __init__(self, video_data):
+        self.video_data = video_data
+        self.video_id = self.video_data["id"]["videoId"]
+        self.video_thumbnailurl = self.video_data["snippet"]["thumbnails"]["default"]['url']
+        self.video_title = self.video_data["snippet"]["title"]
+        self.video_description = self.video_data["snippet"]["description"]
+        self.channel = self.video_data["snippet"]["channelTitle"]
+        self.video_thumbnail = self.getThumbnail()
+        self.api_key = self.getAPIKey()
+        self.base_url = "https://www.googleapis.com/youtube/v3/videos?id=%s&key=%s" % (self.video_id, self.api_key)
+        self.link = "https://www.youtube.com/watch?v=%s&feature=youtu.be" % self.video_id
+        self.video_duration = self.getVideoDuration()
 
-        time.sleep(600)
+    def getAPIKey(self):
+        yt = YouTubeAPI()
+        return yt.readAPIKey()
 
+    def getThumbnail(self):
+        response = requests.get(self.video_thumbnailurl)
+        img_data = response.content
+        image = Image.open(BytesIO(img_data))
+        return image
 
-def rankTests(tests):
-    """
-    Purpose: This function sorts the list of tests by the date of the test.
-    Parameters: It takes the lists of lists where each sublist contains the test name (string), test date (datetime.datetime)
-                and the topic of the test (string).
-    Returns: Returns a sorted list of tests where each sublist contains the test name (string), test date (datetime.datetime)
-                and the topic of the test (string).
-    """
-    for i in range(len(tests)):
-        indexOfEarliest = i
-        for j in range(i+1, len(tests)):
-            if tests[j][1] < tests[indexOfEarliest][1]:              # finding the test with the earliest test date
-                indexOfEarliest = j
+    def resizeThumbnail(self, height, width, method=Image.ANTIALIAS):
+        self.video_thumbnail = self.video_thumbnail.resize((height, width), method)
+        return self.video_thumbnail
 
-        tests[i], tests[indexOfEarliest] = tests[indexOfEarliest], tests[i] # swap
+    def getFullDescription(self):
+        information_url = self.base_url + "&part=snippet"
+        response = requests.get(information_url)
+        response = response.json()
+        return response["items"][0]["snippet"]["description"]
 
-    return tests
-
-
-def displayWelcome(FIRSTTIME, tests):
-    """
-    Purpose: Displays the welcome message to the user.
-    Parameters: Takes a boolean which tells the app whether the user is new or not and a list of tests.
-    Returns: N/A
-    """
-    if FIRSTTIME:
-        print("Welcome to the Study App.")
-        print("This app will help you study for any test.")
-        print("This app compiles all the resources online and displays them to you in an organized way.")
-
-
-def displayTests(tests):
-    for i in range(len(tests)):
-        print(str(i + 1) + " " + str(tests[i]))
+    def getVideoDuration(self):
+        detail_url = self.base_url + "&part=contentDetails"
+        response = requests.get(detail_url)
+        response = response.json()
+        length = response["items"][0]["contentDetails"]["duration"][2:]
+        length = length.lower()
+        return length
 
 
-def readAPIKey(api):
-    file = open("../api_key.txt", 'r')
-    for line in file:
-        if api in line:
-            file.close()
-            return line.strip().split(',')[1]
+class Test:
+    def __init__(self, name, date, description):
+        self.name = name
+        self.date = date
+        self.date_string = self.date.strftime("%b %d %Y %I:%M%p")
+        self.description = description
+
+    def summarize(self):
+        print("Test name: %s Test date: %s Test Description: %s" %(self.name, self.date_string, self.description))
 
 
-def getVideos(videoTopic):
-    api_key = readAPIKey("yt")
-    query = videoTopic
-    num_results = 10
-    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q={query}&sortBy=views&maxResults={num_results}&key={api_key}"
-    data = requests.get(url)
-    data = data.json()
-    videoId = []
-    videoThumbnailUrls = []
-    videoDescriptions = []
-    videoTitles = []
-    for video in data["items"]:
-        videoId.append(video["id"]["videoId"])
-        videoThumbnailUrls.append(video["snippet"]["thumbnails"]["default"]['url'])
-        videoTitles.append(video["snippet"]["title"])
-        videoDescriptions.append(video["snippet"]["description"])
-    
-    return videoId, videoThumbnailUrls, videoDescriptions, videoTitles
+class TestCatalog:
+    def __init__(self):
+        self.tests = self.readDatabase()
+        self.length = len(self.tests)
+        thread = threading.Thread(target=self.threadedChecker)
+        thread.daemon = True
+        thread.start()
 
-def displayImage(thumbnailUrl, win, center, imageWidth, imageHeight):
-    response = requests.get(thumbnailUrl)
-    img_data = response.content
-    photo_image = ImageTk.PhotoImage(Image.open(BytesIO(img_data)).resize((imageWidth, imageHeight), Image.ANTIALIAS))
 
-    win.toScreen(center.getX(), center.getY())
-    win.create_image(center.getX(), center.getY(), image=photo_image)
-    mouse = win.getMouse()
-    return win, mouse
+    def readDatabase(self, root="database.txt"):
+        """
+        Purpose: This function reads all the upcoming tests of the user.
+        Parameters: This function takes the path of the database file as a string.
+        Returns: Returns a list of lists with each list containing the test name (string), test date (datetime.datetime)
+                 and topic (string).
+        """
+        file = open(root, 'r')
+        tests = []
+        for line in file:
+            line = line.strip().split(',')
+            line[1] = datetime.strptime(line[1], '%b %d %Y %I:%M%p')  # cast the string into a datetime value
+            tests.append(Test(line[0], line[1], line[2]))
+
+        file.close()
+        return tests
+
+    def updateDatabase(self, root="database.txt"):
+        """
+        Purpose: This function updates the database file with the new set of tests.
+        Parameters: This function takes the path to the databse file, a string, and the list of tests which is a list of lists.
+        Returns: N/A
+        """
+        file = open(root, 'w')
+        for test in self.tests:
+            file.write(test.name)
+            file.write(',')
+            file.write(test.date_string)
+            file.write(',')
+            file.write(test.description)
+            file.write("\n")
+
+        file.close()
+
+    def rankTests(self):
+        """
+        Purpose: This function sorts the list of tests by the date of the test.
+        Parameters: It takes the lists of lists where each sublist contains the test name (string), test date (datetime.datetime)
+                    and the topic of the test (string).
+        Returns: Returns a sorted list of tests where each sublist contains the test name (string), test date (datetime.datetime)
+                    and the topic of the test (string).
+        """
+        for i in range(self.length):
+            indexOfEarliest = i
+            for j in range(i + 1, self.length):
+                if tests[j].date < tests[indexOfEarliest].date:  # finding the test with the earliest test date
+                    indexOfEarliest = j
+
+            tests[i], tests[indexOfEarliest] = tests[indexOfEarliest], tests[i]  # swap
+
+        return tests
+
+    def summarizeTests(self):
+        for test in self.tests:
+            test.summarize()
+
+    def threadedChecker(self):
+        while True:
+            valid = []
+            for test in self.tests:
+                if test.date > datetime.now():
+                    valid.append(test)
+            self.tests = valid
+            self.length = len(self.tests)
+            self.updateDatabase()
+            self.summarizeTests()
+            time.sleep(600)
 
 def showFrame(frames, controller):
     frame = frames[controller]
@@ -147,8 +188,9 @@ def showFrame(frames, controller):
 
 def createHomePage(frames, container):
     frame = tk.Frame(container)
-    homeButton = tk.Button()
+    homeButton = tk.Button(frame, text="Home")
     frames["HomePage"] = frame
+
     return
 
 
@@ -159,7 +201,8 @@ def createContainer(app):
     container.grid_columnconfigure(0, weight=1)
     return container
 
-if __name__ == "__main__":
+
+"""if __name__ == "__main__":
     APPISACTIVE = True
     FIRSTTIME = False
 
@@ -191,62 +234,9 @@ if __name__ == "__main__":
         page = key
         frame = value
         frames[page] = frame
-        # 'nsew' tells each Frame widget to fill the entire space allotted
         frame.grid(row=0, column=0, sticky="nsew")
 
     showFrame(frames, "HomePage")
     app.mainloop()
-"""
-    displayWelcome(FIRSTTIME, tests)
 
-    currentPage = -1
-    pages = {0:"home", 1:"study", 2:"general"}
-    page = input("Type for page: ")
-    currentPage = page
-    while APPISACTIVE:
-
-        if currentPage == "home":
-            print("This is the home page")
-            print("These are your tests (ranked in urgency)")
-            displayTests(tests)
-            while currentPage == "home":
-                choice = input("study, quit, add ")
-                if choice == "quit":
-                    currentPage = "quit"
-
-                elif choice == "add":
-                    test = []
-                    test.append(input("Name of test: "))
-                    date = ""
-                    date += input("Name of month: ")[:3] + " "
-                    date += input("Date: ") + " "
-                    date += input("Year: ") + " "
-                    date += input("Hour: ") + ":"
-                    date += input("Minute: ")
-                    date += input("AM/PM: ")
-                    date = datetime.strptime(date, '%b %d %Y %I:%M%p')
-                    test.append(date)
-                    test.append(input("Description of test "))
-
-                    tests.append(test)
-                    rankTests(tests)
-                    updateDatabase(database_path, tests)
-                    displayTests(tests)
-                else:
-                    currentPage = choice
-
-        elif currentPage == "study":
-            while currentPage == "study":
-                displayTests(tests)
-                choice = input("Enter home to go to home, exit to exit, or the number of the test you want to study for: ")
-
-                if choice == "home":
-                    currentPage = choice
-                elif choice == "quit":
-                    APPISACTIVE = False
-                    currentPage = "quit"
-                else:
-                    choice = int(choice) - 1
-                    chosenTest = tests[choice]
-                    print("You chose to study for %s" % chosenTest[0])
 """
