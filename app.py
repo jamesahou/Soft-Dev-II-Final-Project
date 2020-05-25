@@ -193,6 +193,21 @@ class TestCatalog:
         self.updateDatabase()
         return self.tests
 
+class Page:
+    def __init__(self, container, name):
+        self.container = container
+        self.frame = tk.Frame(container)
+        self.name = name
+
+    def addPage(self, frames):
+        frames[self.name] = self.frame
+        return frames
+
+class MainPage(Page):
+    def __init__(self, container, name):
+        super().__init__(container, name)
+        self.homeButton = tk.Button(self.frame, text="Home", command=lambda:showFrame(""))
+
 def showFrame(frames, controller):
     frame = frames[controller]
     frame.tkraise()
