@@ -214,7 +214,7 @@ def createContainer(app):
     return container
 
 
-"""if __name__ == "__main__":
+if __name__ == "__main__":
     APPISACTIVE = True
     FIRSTTIME = False
 
@@ -251,4 +251,4 @@ def createContainer(app):
     showFrame(frames, "HomePage")
     app.mainloop()
 
-"""
+
