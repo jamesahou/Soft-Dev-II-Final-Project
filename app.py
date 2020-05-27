@@ -14,7 +14,9 @@ import time
 import json
 import graphics
 import requests
+from tkinter import ttk
 import tkinter as tk
+from tkinter import messagebox
 import threading
 from PIL import ImageTk, Image
 import requests
@@ -119,6 +121,11 @@ class TestCatalog:
             thread.daemon = True
             thread.start()
 
+    def __getitem__(self, key):
+        return self.tests[key]
+
+    def __len__(self):
+        return len(self.tests)
 
     def readDatabase(self,):
         """
@@ -193,40 +200,132 @@ class TestCatalog:
         self.updateDatabase()
         return self.tests
 
-class Page:
-    def __init__(self, container, name):
-        self.container = container
-        self.frame = tk.Frame(container)
-        self.name = name
 
-    def addPage(self, frames):
-        frames[self.name] = self.frame
-        return frames
+class App:
+    def __init__(self,):
+        self.root = tk.Tk()
+        self.root.title("Study App")
+        self.appHeight = self.root.winfo_screenheight() * 3 // 5
+        self.appWidth = self.root.winfo_screenwidth() * 3 // 5
+        self.root.geometry("%dx%d" %(self.appWidth, self.appHeight))
 
-class MainPage(Page):
-    def __init__(self, container, name):
-        super().__init__(container, name)
-        self.homeButton = tk.Button(self.frame, text="Home", command=lambda:showFrame(""))
+        self.catalog = TestCatalog()
 
-def showFrame(frames, controller):
-    frame = frames[controller]
-    frame.tkraise()
-    return
-
-def createHomePage(frames, container):
-    frame = tk.Frame(container)
-    homeButton = tk.Button(frame, text="Home")
-    frames["HomePage"] = frame
-
-    return
+        self.navigator = self.createNavigator()
+        self.root.mainloop()
 
 
-def createContainer(app):
-    container = tk.Frame(app)
-    container.pack(side="top", fill="both", expand=True)
-    container.grid_rowconfigure(0, weight=1)
-    container.grid_columnconfigure(0, weight=1)
-    return container
+    def createNavigator(self):
+        navigator = ttk.Notebook(self.root)
+        navigator.add(HomePage(navigator, self.catalog), text="Home", )
+        navigator.add(StudyPage(navigator, self.catalog), text="Study")
+        navigator.add(SettingsPage(navigator, self.catalog), text="Settings")
+        navigator.pack(side="top", fill="both", expand=True)
+        navigator.grid_rowconfigure(0, weight=1)
+        navigator.grid_columnconfigure(0, weight=1)
+        return navigator
+
+
+class HomePage(tk.Frame):
+    def __init__(self, parent, catalog):
+        tk.Frame.__init__(self, master=parent, relief=tk.SUNKEN)
+
+        self.pageTitle = tk.Label(self, text="HOME PAGE", font=("Verdana", 24, "bold"))
+        self.pageTitle.pack()
+
+        self.table = self.createTable()
+        self.catalog = catalog
+
+        self.updateButton = ttk.Button(self, text='UPDATE TABLE', command=self.updateTable())
+        self.updateButton.pack()
+
+        self.nameLabel = None
+        self.nameEntry = None
+        self.dateLabel = None
+        self.dateEntry = None
+        self.descriptionLabel = None
+        self.descriptionEntry = None
+        self.createEntries()
+
+        self.addButton = tk.Button(self, text="ADD TEST", command=lambda: self.addTest())
+        self.addButton.pack()
+
+    def createTable(self):
+        title = tk.Label(self, text="Test List (Ranked In Urgency)", font=("Verdana", 18))
+        title.pack()
+        columns = ('Rank', 'Test', 'Date', 'Description')
+        table = ttk.Treeview(self, columns=('Rank', 'Test', 'Date', 'Description'), show='headings')
+
+        verscrlbar = ttk.Scrollbar(self, orient="vertical", command=table.yview)
+        verscrlbar.pack(side='right', fill='x')
+        table.configure(xscrollcommand=verscrlbar.set)
+
+        for label in columns:
+            table.heading(label, text=label)
+
+        table.pack()
+        return table
+
+    def populateTable(self,):
+        for i in range(1, len(self.catalog) + 1):
+            test = self.catalog[i-1]
+            self.table.insert("", "end", values=(i, test.name, test.date_string, test.description))
+
+        self.table.pack()
+
+    def eraseTable(self):
+        self.table.delete(*self.table.get_children())
+
+    def updateTable(self):
+        self.eraseTable()
+        self.populateTable()
+
+    def createEntries(self):
+        self.nameLabel = tk.Label(self, text="Name", font=("Verdana", 16))
+        self.nameEntry = tk.Entry(self)
+        self.dateLabel = tk.Label(self, text="Date (Month Date Year Hour MinuteAM/PM)", font=("Verdana", 16))
+        self.dateEntry = tk.Entry(self)
+        self.descriptionLabel = tk.Label(self, text="Description", font=("Verdana", 16))
+        self.descriptionEntry = tk.Entry(self)
+
+        self.nameLabel.pack()
+        self.nameEntry.pack()
+        self.dateLabel.pack()
+        self.dateEntry.pack()
+        self.descriptionLabel.pack()
+        self.descriptionEntry.pack()
+
+    def addTest(self):
+        name = self.nameEntry.get()
+        date = self.dateEntry.get()
+        description = self.descriptionEntry.get()
+        try:
+            date = datetime.strptime(date, '%b %d %Y %I:%M%p')
+            if date < datetime.now():
+                messagebox.showwarning("Warning", "Please enter a date in the future")
+            else:
+                self.catalog.addTest(Test(name, date, description))
+                self.updateTable()
+                self.nameEntry.delete(0, 'end')
+                self.dateEntry.delete(0, 'end')
+                self.descriptionEntry.delete(0, 'end')
+        except ValueError:
+            messagebox.showwarning("Warning", "Your date entry did not match Month Date Year Hour MinuteAM/PM format.\nPlease try again")
+
+
+
+class StudyPage(tk.Frame):
+    def __init__(self, parent, catalog):
+        tk.Frame.__init__(self, master=parent)
+        label = tk.Label(master=self, text="Study", font=("Verdana", 24))
+        label.pack()
+
+
+class SettingsPage(tk.Frame):
+    def __init__(self, parent, catalog):
+        tk.Frame.__init__(self, master=parent)
+        label = tk.Label(master=self, text="Settings", font=("Verdana", 24))
+        label.pack()
 
 
 if __name__ == "__main__":
@@ -243,27 +342,6 @@ if __name__ == "__main__":
         file = open(database_path, 'w')
         file.close()
         FIRSTTIME = True
-    tests = readDatabase(database_path)
-    tests = rankTests(tests)
 
-    updateDatabase(database_path, tests)
-
-    app = tk.Tk()
-    app.title("Study App")
-    appHeight = app.winfo_screenheight() * 4 // 5
-    appWidth = app.winfo_screenwidth() * 4 // 5
-    app.geometry("%dx%d" %(appWidth, appHeight))
-
-    container = createContainer(app)
-    frames = {}
-    createHomePage(frames, container)
-    for (key, value) in frames.items():
-        page = key
-        frame = value
-        frames[page] = frame
-        frame.grid(row=0, column=0, sticky="nsew")
-
-    showFrame(frames, "HomePage")
-    app.mainloop()
-
+    app = App()
 
