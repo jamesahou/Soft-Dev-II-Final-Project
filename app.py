@@ -60,7 +60,6 @@ class Video:
         self.video_title = self.video_data["snippet"]["title"]
         self.video_description = self.video_data["snippet"]["description"]
         self.channel = self.video_data["snippet"]["channelTitle"]
-        self.video_thumbnail = self.getThumbnail()
         self.api_key = self.getAPIKey()
         self.base_url = "https://www.googleapis.com/youtube/v3/videos?id=%s&key=%s" % (self.video_id, self.api_key)
         self.link = "https://www.youtube.com/watch?v=%s&feature=youtu.be" % self.video_id
@@ -69,16 +68,6 @@ class Video:
     def getAPIKey(self):
         yt = YouTubeAPI()
         return yt.readAPIKey()
-
-    def getThumbnail(self):
-        response = requests.get(self.video_thumbnailurl)
-        img_data = response.content
-        image = Image.open(BytesIO(img_data))
-        return image
-
-    def resizeThumbnail(self, height, width, method=Image.ANTIALIAS):
-        self.video_thumbnail = self.video_thumbnail.resize((height, width), method)
-        return self.video_thumbnail
 
     def getFullDescription(self):
         information_url = self.base_url + "&part=snippet"
@@ -151,6 +140,7 @@ class TestCatalog:
         Returns: N/A
         """
         file = open(self.root, 'w')
+        self.rankTests()
         for test in self.tests:
             file.write(test.name)
             file.write(',')
@@ -179,9 +169,11 @@ class TestCatalog:
 
         return self.tests
 
-    def summarizeTests(self):
+    def __str__(self):
+        summary = ''
         for test in self.tests:
-            test.summarize()
+            summary += test.summarize() + '\n'
+        return summary
 
     def threadedChecker(self):
         while True:
@@ -192,11 +184,11 @@ class TestCatalog:
             self.tests = valid
             self.length = len(self.tests)
             self.updateDatabase()
-            self.summarizeTests()
             time.sleep(600)
 
     def addTest(self, test):
         self.tests.append(test)
+        self.length = len(self)
         self.updateDatabase()
         return self.tests
 
@@ -226,33 +218,12 @@ class App:
         return navigator
 
 
-class HomePage(tk.Frame):
+class Page(tk.Frame):
     def __init__(self, parent, catalog):
         tk.Frame.__init__(self, master=parent, relief=tk.SUNKEN)
-
-        self.pageTitle = tk.Label(self, text="HOME PAGE", font=("Verdana", 24, "bold"))
-        self.pageTitle.pack()
-
-        self.table = self.createTable()
         self.catalog = catalog
 
-        self.updateButton = ttk.Button(self, text='UPDATE TABLE', command=self.updateTable())
-        self.updateButton.pack()
-
-        self.nameLabel = None
-        self.nameEntry = None
-        self.dateLabel = None
-        self.dateEntry = None
-        self.descriptionLabel = None
-        self.descriptionEntry = None
-        self.createEntries()
-
-        self.addButton = tk.Button(self, text="ADD TEST", command=lambda: self.addTest())
-        self.addButton.pack()
-
     def createTable(self):
-        title = tk.Label(self, text="Test List (Ranked In Urgency)", font=("Verdana", 18))
-        title.pack()
         columns = ('Rank', 'Test', 'Date', 'Description')
         table = ttk.Treeview(self, columns=('Rank', 'Test', 'Date', 'Description'), show='headings')
 
@@ -280,6 +251,33 @@ class HomePage(tk.Frame):
         self.eraseTable()
         self.populateTable()
 
+
+class HomePage(Page):
+    def __init__(self, parent, catalog):
+        super().__init__(parent, catalog)
+
+        self.pageTitle = tk.Label(self, text="HOME PAGE", font=("Verdana", 24, "bold"))
+        self.pageTitle.pack()
+
+
+        title = tk.Label(self, text="Test List (Ranked In Urgency)", font=("Verdana", 18))
+        title.pack()
+        self.table = self.createTable()
+
+        self.updateButton = ttk.Button(self, text='UPDATE TABLE', command=self.updateTable())
+        self.updateButton.pack()
+
+        self.nameLabel = None
+        self.nameEntry = None
+        self.dateLabel = None
+        self.dateEntry = None
+        self.descriptionLabel = None
+        self.descriptionEntry = None
+        self.createEntries()
+
+        self.addButton = tk.Button(self, text="ADD TEST", command=lambda: self.addTest())
+        self.addButton.pack()
+
     def createEntries(self):
         self.nameLabel = tk.Label(self, text="Name", font=("Verdana", 16))
         self.nameEntry = tk.Entry(self)
@@ -305,6 +303,7 @@ class HomePage(tk.Frame):
                 messagebox.showwarning("Warning", "Please enter a date in the future")
             else:
                 self.catalog.addTest(Test(name, date, description))
+
                 self.updateTable()
                 self.nameEntry.delete(0, 'end')
                 self.dateEntry.delete(0, 'end')
@@ -313,12 +312,103 @@ class HomePage(tk.Frame):
             messagebox.showwarning("Warning", "Your date entry did not match Month Date Year Hour MinuteAM/PM format.\nPlease try again")
 
 
+class StudyMenu(Page):
+    def __init__(self, parent, controller, catalog):
+        super().__init__(parent, catalog)
+        
+        self.controller = controller
 
-class StudyPage(tk.Frame):
+        self.pageTitle = tk.Label(self, text="Double Click A Test To Study For", font=("Verdana", 18, "bold"))
+        self.pageTitle.pack()
+        
+        self.table = self.createTable()
+        self.table.bind("<Double-Button-1>", func=lambda x: self.displayResourcePage())
+
+        self.updateButton = ttk.Button(self, text='UPDATE TABLE', command=self.updateTable())
+        self.updateButton.pack()
+
+    def displayResourcePage(self):
+        self.controller.chosenTestIndex = self.table.item(self.table.selection())['values'][0] - 1
+        self.controller.showFrame(ResourcePage)
+
+class Gallery(tk.LabelFrame):
+    def __init__(self, parent, name):
+        tk.LabelFrame.__init__(self, master=parent, text=name, height=150, padx=20, pady=20)
+        self.pack(side="top", fill="both", padx=10, pady=10)
+        self.rowconfigure(2)
+        self.columnconfigure(10)
+
+class YouTubeGallery(Gallery):
+    def __init__(self, parent, test):
+        super().__init__(parent, "VIDEOS")
+        self.yt = YouTubeAPI()
+        self.test = test
+        self.videos = self.yt.searchVideo(test.description, 10)
+        self.addImages()
+
+    def addImages(self):
+        for i in range(len(self.videos)):
+            # photoLabel = tk.Label(master=self, image=self.getThumbnail(self.videos[i]))
+            # photoLabel.image = self.getThumbnail()
+
+            button = tk.Button(master=self, text="Expand and Watch", command=lambda: self.expand(i))
+            # imageLabel.grid(row=0, column=i)
+            button.grid(row=1, column=i)
+
+    def expand(self, index):
+        print(self.videos[index].video_description)
+
+    def getThumbnail(self, video):
+        response = requests.get(video.video_thumbnailurl)
+        imageFile = response.content
+
+        imageData = Image.open(BytesIO(imageFile))
+        imageData.show()
+        imagePhoto = ImageTk.PhotoImage(imageData)
+        return imagePhoto
+
+class ResourcePage(Page):
+    def __init__(self, parent, controller, catalog):
+        super().__init__(parent, catalog)
+        self.parent = parent
+        self.controller = controller
+        self.destroyList = []
+        self.loadPageButton = tk.Button(self, text="LOAD PAGE", command=lambda: self.loadPage())
+        self.loadPageButton.pack()
+        self.backButton = tk.Button(self, text="BACK", command=lambda: self.backFunction())
+        self.backButton.pack()
+
+    def backFunction(self):
+        for widget in self.destroyList:
+            widget.destroy()
+        self.controller.showFrame(StudyMenu)
+
+    def loadPage(self):
+        self.ytGallery = YouTubeGallery(self, self.catalog[self.controller.chosenTestIndex])
+        self.destroyList.append(self.ytGallery)
+
+class StudyPage(Page):
     def __init__(self, parent, catalog):
-        tk.Frame.__init__(self, master=parent)
-        label = tk.Label(master=self, text="Study", font=("Verdana", 24))
-        label.pack()
+        super().__init__(parent, catalog)
+        self.container = tk.Frame(self)
+        self.container.pack(side="top", fill="both", expand=True)
+        self.container.grid_rowconfigure(0, weight=1)
+        self.container.grid_columnconfigure(0, weight=1)
+        self.frames = {}
+        self.chosenTestIndex = None
+
+        for F in (StudyMenu, ResourcePage):
+            frame = F(self.container, self, self.catalog)
+
+            self.frames[F] = frame
+
+            frame.grid(row=0, column=0, sticky="nsew")
+
+        self.showFrame(StudyMenu)
+
+    def showFrame(self, page_name):
+        frame = self.frames[page_name]
+        frame.tkraise()
 
 
 class SettingsPage(tk.Frame):
@@ -344,4 +434,3 @@ if __name__ == "__main__":
         FIRSTTIME = True
 
     app = App()
-
