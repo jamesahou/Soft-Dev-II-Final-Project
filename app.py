@@ -16,12 +16,11 @@ import graphics
 import requests
 from tkinter import ttk
 import tkinter as tk
-from tkinter import messagebox
 import threading
 from PIL import ImageTk, Image
 import requests
 from io import BytesIO
-
+import webbrowser
 
 class API:
     def __init__(self, api_name):
@@ -40,15 +39,19 @@ class API:
 class YouTubeAPI(API):
     def __init__(self):
         super().__init__('yt')
-        self.search_url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&sortBy=views&key=%s' % self.api_key
+        self.search_url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=relevance&relevanceLanguage=en&key=%s' % self.api_key
 
     def searchVideo(self, query, numResults):
         search_url = self.search_url + ("&q=%s" % query) + ("&maxResults=%d" % numResults)
         data = requests.get(search_url)
         data = data.json()
         videos = []
-        for video in data["items"]:
-            videos.append(Video(video))
+        try:
+            for video in data["items"]:
+                videos.append(Video(video))
+        except Exception:
+            print("Sorry API quota exceeded")
+
         return videos
 
 
@@ -195,10 +198,10 @@ class TestCatalog:
 
 class App:
     def __init__(self,):
-        self.root = tk.Tk()
+        self.root = tk.Toplevel()
         self.root.title("Study App")
-        self.appHeight = self.root.winfo_screenheight() * 3 // 5
-        self.appWidth = self.root.winfo_screenwidth() * 3 // 5
+        self.appHeight = self.root.winfo_screenheight() * 4 // 5
+        self.appWidth = self.root.winfo_screenwidth() * 4 // 5
         self.root.geometry("%dx%d" %(self.appWidth, self.appHeight))
 
         self.catalog = TestCatalog()
@@ -324,54 +327,106 @@ class StudyMenu(Page):
         self.table = self.createTable()
         self.table.bind("<Double-Button-1>", func=lambda x: self.displayResourcePage())
 
-        self.updateButton = ttk.Button(self, text='UPDATE TABLE', command=self.updateTable())
+        self.updateTable()
+
+        self.updateButton = ttk.Button(self, text='UPDATE TABLE', command=lambda: self.updateTable())
         self.updateButton.pack()
 
     def displayResourcePage(self):
         self.controller.chosenTestIndex = self.table.item(self.table.selection())['values'][0] - 1
         self.controller.showFrame(ResourcePage)
 
+
 class Gallery(tk.LabelFrame):
     def __init__(self, parent, name):
-        tk.LabelFrame.__init__(self, master=parent, text=name, height=150, padx=20, pady=20)
+        if parent.numGalleries > 3:
+            self.setHeight = parent.winfo_height()//(parent.numGalleries + 1)
+        else:
+            self.setHeight = parent.winfo_height()//4
+
+        tk.LabelFrame.__init__(self, master=parent, text=name, height=self.setHeight, padx=5, pady=5)
         self.pack(side="top", fill="both", padx=10, pady=10)
+        self.update()
+        self.height = self.winfo_height()
+        self.width = self.winfo_width()
         self.rowconfigure(2)
         self.columnconfigure(10)
 
+
 class YouTubeGallery(Gallery):
-    def __init__(self, parent, test):
+    def __init__(self, parent, test, numResults=10):
         super().__init__(parent, "VIDEOS")
         self.yt = YouTubeAPI()
         self.test = test
-        self.videos = self.yt.searchVideo(test.description, 10)
+        self.numResults = numResults
+        self.videos = self.yt.searchVideo(test.description, self.numResults)
         self.addImages()
 
     def addImages(self):
         for i in range(len(self.videos)):
-            # photoLabel = tk.Label(master=self, image=self.getThumbnail(self.videos[i]))
-            # photoLabel.image = self.getThumbnail()
+            thumbnail = self.getThumbnail(self.videos[i], self.width//(self.numResults+2), self.height//2)
+            photoLabel = tk.Label(self, width=self.width//(self.numResults+2), height=self.height//2, image=thumbnail)
+            photoLabel.image = thumbnail
 
-            button = tk.Button(master=self, text="Expand and Watch", command=lambda: self.expand(i))
-            # imageLabel.grid(row=0, column=i)
+            button = tk.Button(self, text="Expand and Watch", command=lambda index=i: self.expand(index))
+            photoLabel.grid(row=0, column=i, padx=10, pady=10)
             button.grid(row=1, column=i)
 
     def expand(self, index):
-        print(self.videos[index].video_description)
+        video = self.videos[index]
 
-    def getThumbnail(self, video):
+        info_box = tk.Toplevel()
+
+        info_box_height = self.info_box.winfo_screenheight() * 2 // 5
+        info_box_width = self.info_box.winfo_screenwidth() * 2 // 5
+
+        info_box.geometry("%dx%d" % (info_box_width, info_box_height))
+
+        thumbnail = self.getThumbnail(video, info_box_width//3, info_box_height//3)
+
+        videoTitle = tk.Label(info_box, text=video.video_title, font=("Verdana", 18))
+        videoLength = tk.Label(info_box, text=video.video_duration, font=("Verdana", 14))
+        videoThumbnail = tk.Label(info_box, image=thumbnail)
+        videoThumbnail.image = thumbnail
+        watchButton = tk.Button(info_box, text="Watch Video", command=lambda: self.launchVideo())
+        description = tk.StringVar(video.video_description)
+        videoDescription = tk.Label(info_box, text=description)
+        showMoreButton = tk.Button(info_box, text="Show More", command=lambda: self.showMore(info_box, video))
+
+        videoTitle.pack()
+        videoLength.pack()
+        videoThumbnail.pack()
+        watchButton.pack()
+        videoDescription.pack()
+        showMoreButton.pack()
+
+    def getThumbnail(self, video, width, height):
         response = requests.get(video.video_thumbnailurl)
         imageFile = response.content
 
         imageData = Image.open(BytesIO(imageFile))
-        imageData.show()
+        imageData = self.resizeImage(imageData, width, height)
         imagePhoto = ImageTk.PhotoImage(imageData)
         return imagePhoto
+
+    def resizeImage(self, image, width, height):
+        newDimensions = (width, height)
+        image = image.resize(newDimensions, Image.ANTIALIAS)
+        return image
+
+    def launchVideo(self, video):
+        webbrowser.open(video.link)
+
+    def showMore(self, parent, video):
+        full_description = video.getFullDescription()
+        parent.videoDescription['text'] = full_description
 
 class ResourcePage(Page):
     def __init__(self, parent, controller, catalog):
         super().__init__(parent, catalog)
         self.parent = parent
         self.controller = controller
+        self.numGalleries = 1
         self.destroyList = []
         self.loadPageButton = tk.Button(self, text="LOAD PAGE", command=lambda: self.loadPage())
         self.loadPageButton.pack()
@@ -386,6 +441,7 @@ class ResourcePage(Page):
     def loadPage(self):
         self.ytGallery = YouTubeGallery(self, self.catalog[self.controller.chosenTestIndex])
         self.destroyList.append(self.ytGallery)
+
 
 class StudyPage(Page):
     def __init__(self, parent, catalog):
